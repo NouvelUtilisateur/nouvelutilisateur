@@ -1,0 +1,66 @@
+io.stdout:setvbuf('no')
+love.math.setRandomSeed(love.timer.getTime()) -- à utiliser avec love.math.random(nb1,nb2) --
+love.graphics.setDefaultFilter("nearest")
+
+ball = {}
+	ball.x = 10
+	ball.y = 10
+	ball.width = 25
+	ball.height = 25
+	ball.vx = 400
+	ball.vy = 400
+
+square = {}
+	square.x = 300
+	square.y = 300
+	square.width = 150
+	square.height = 150
+
+	previousx = 0
+	previousy = 0
+
+function love.load()
+
+end
+
+
+function love.update(dt)
+
+	--Vitesse de la balle
+	ball.x = ball.x + ball.vx * dt
+	ball.y = ball.y + ball.vy * dt
+
+	--collisions murs
+	if ball.x < 0 then
+		ball.x = 0
+		ball.vx = - ball.vx
+	elseif ball.x + ball.width > love.graphics.getWidth() then
+		ball.x = love.graphics.getWidth() - ball.width
+		ball.vx = - ball.vx
+	elseif ball.y + ball.height > love.graphics.getHeight() then
+		ball.y = love.graphics.getHeight() - ball.height
+		ball.vy = - ball.vy
+	elseif ball.y < 0 then
+		ball.y = 0
+		ball.vy = - ball.vy
+	end
+
+	-- collisions de la balle avec le carré
+	previousx = ball.x
+	previousy = ball.y
+	if ball.x < square.x + square.width and
+		ball.x + ball.width > square.x and
+		ball.y < square.y + square.height and
+		ball.y + ball.height > square.y then
+	
+		ball.x = previousx
+		ball.y = previousy
+		ball.vx = - ball.vx
+	end
+end	
+
+function love.draw()
+	love.graphics.rectangle("line", square.x, square.y, square.width, square.height)
+	love.graphics.rectangle("line", ball.x, ball.y, ball.width, ball.height)
+
+end
