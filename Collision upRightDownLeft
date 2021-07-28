@@ -1,7 +1,7 @@
 io.stdout:setvbuf('no')
 love.math.setRandomSeed(love.timer.getTime()) -- à utiliser avec love.math.random(nb1,nb2) --
 love.graphics.setDefaultFilter("nearest")
-
+-------------------------------------------- COLLISIONS RESOLVED UP RIGHT DOWN LEFT --------------------------------------------
 ball = {}
 	ball.x = 0
 	ball.y = 0
@@ -11,11 +11,11 @@ ball = {}
 	ball.oldy = nil
 	ball.oldxwidth = nil
 	ball.oldyheight = nil
-	ball.vx = 300
-	ball.vy = 300
+	ball.vx = 400
+	ball.vy = 400
 
 wall = {}
-	wall.x = 200
+	wall.x = 250
 	wall.y = 200
 	wall.width = 200
 	wall.height = 200
@@ -118,3 +118,4 @@ function resolveCollision(box1, box2) -- pushback = self.x + self.width - e.x
 		return "collideUnderneath"
 	end
 end
+
