@@ -99,8 +99,8 @@ function chekCollision(box1, box2) -- detecte s'il n'y a pas de collision, renvo
     end
 end
 
-function resolveCollision(box1, box2) -- (pushback = self.x + self.width - e.x) detecte si la balle tape en haut/bas/gauche/droite du mur si oui, inverse la velocité
-	if box1.oldx + box1.width < box2.x then 
+function resolveCollision(box1, box2) -- detecte si la balle tape en haut/bas/gauche/droite du mur en fonction de l'ancienne poistion de la balle, inverse la velocité
+	if box1.oldx + box1.width < box2.x then -- et repousse la balle en dehors du mur 
 		box1.x = box1.x - ((box1.x + box1.width) - box2.x) - 0.1
 		ball.vx = - ball.vx
 		return "collideLeft"
@@ -118,5 +118,4 @@ function resolveCollision(box1, box2) -- (pushback = self.x + self.width - e.x) 
 		return "collideUnderneath"
 	end
 end
-
-
+-- note to myself: pushback = self.x + self.width - e.x
