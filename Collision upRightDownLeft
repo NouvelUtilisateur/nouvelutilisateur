@@ -1,0 +1,120 @@
+io.stdout:setvbuf('no')
+love.math.setRandomSeed(love.timer.getTime()) -- à utiliser avec love.math.random(nb1,nb2) --
+love.graphics.setDefaultFilter("nearest")
+
+ball = {}
+	ball.x = 0
+	ball.y = 0
+	ball.width = 50
+	ball.height = 50
+	ball.oldx = nil
+	ball.oldy = nil
+	ball.oldxwidth = nil
+	ball.oldyheight = nil
+	ball.vx = 300
+	ball.vy = 300
+
+wall = {}
+	wall.x = 200
+	wall.y = 200
+	wall.width = 200
+	wall.height = 200
+	wall.oldx = nil
+	wall.oldy = nil
+
+
+function love.load()
+
+end
+
+
+function love.update(dt)
+	oldBallPosition()
+	oldWallPosition()
+	
+	updateBall(dt)
+	if chekCollision(ball, wall) then
+		print(resolveCollision(ball, wall))
+	end
+	
+	
+end
+
+
+function love.draw()
+	love.graphics.rectangle("fill", ball.x, ball.y, ball.width, ball.height)
+	love.graphics.rectangle("line", wall.x, wall.y, wall.width, wall.height)
+end	
+
+
+function oldBallPosition()
+	ball.oldx = ball.x
+	ball.oldy = ball.y
+end	
+function oldWallPosition()
+	wall.oldx = wall.x
+	wall.oldy = wall.y
+end
+
+function updateBall(dt)
+	ball.x = ball.x + ball.vx * dt
+	ball.y = ball.y + ball.vy * dt
+	if ball.x < 0 then 
+		ball.x = 0
+		ball.vx = - ball.vx
+	elseif ball.y < 0 then
+		ball.y = 0
+		ball.vy = - ball.vy
+	elseif ball.x + ball.width > love.graphics.getWidth() then
+		ball.x = love.graphics.getWidth() - ball.width
+		ball.vx = - ball.vx
+	elseif ball.y + ball.height > love.graphics.getHeight() then
+		ball.y = love.graphics.getHeight() - ball.height
+		ball.vy = - ball.vy
+	end 
+	--[[
+	if love.keyboard.isDown("d") then
+		ball.x = ball.x + ball.vx * dt
+	end
+	if love.keyboard.isDown("q") then
+		ball.x = ball.x - ball.vx * dt
+	end
+	if love.keyboard.isDown("z") then
+		ball.y = ball.y - ball.vy * dt
+	end
+	if love.keyboard.isDown("s") then
+		ball.y = ball.y + ball.vy * dt
+	end
+	]]
+end
+
+function chekCollision(box1, box2) -- detecte s'il n'y a pas de collision
+   if (box2.x > box1.x + box1.width)  -- trop à droite donc aucune collision
+	or (box2.x + box2.width < box1.x) -- trop à gauche ""
+	or (box2.y > box1.y + box1.height) -- trop en bas ""
+	or (box2.y + box2.height < box1.y) then  -- trop en haut ""
+          return false 
+   else
+          return true
+    end
+end
+
+function resolveCollision(box1, box2) -- pushback = self.x + self.width - e.x
+	if box1.oldx + box1.width < box2.x then 
+		box1.x = box1.x - ((box1.x + box1.width) - box2.x) - 0.1
+		ball.vx = - ball.vx
+		return "collideLeft"
+	elseif box1.oldx > box2.x + box2.width then 
+		box1.x = box1.x - (box1.x - (box2.x + box2.width)) + 0.1
+		ball.vx = - ball.vx
+		return "collideRight"
+	elseif box1.oldy + box1.height < box2.y then 
+		box1.y = box1.y - ((box1.y + box1.height) - box2.y) - 0.1
+		ball.vy = - ball.vy
+		return "collideOver"
+	elseif box1.oldy > box2.y + box2.height then 
+		box1.y = box1.y - (box1.y - (box2.y + box2.height)) + 0.1
+		ball.vy = - ball.vy
+		return "collideUnderneath"
+	end
+end
