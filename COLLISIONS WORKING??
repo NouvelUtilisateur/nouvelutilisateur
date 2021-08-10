@@ -1,0 +1,109 @@
+io.stdout:setvbuf('no')
+love.graphics.setDefaultFilter("nearest")
+					-- ______________COLLISIONS RESOLVED ? REALLY WORKS SO FAR ???!!!!!!!!!!!!
+ball = {}
+ball.x = 0
+ball.y = 0
+ball.width = 50
+ball.height = 50
+ball.vx = 0
+ball.vy = 0
+ball.accel = 300
+ball.gravity = 350
+
+bs = {}
+
+right = "RIGHT"
+left = "LEFT"
+top = "TOP"
+bottom = "DOWN"
+
+function love.load()
+	for i = 1, 15 do
+		newB((i - 1) * 51, 400)
+	end
+	for i = 1, 10 do
+		newB((i - 1) * 51, 200)
+	end
+end
+
+
+function love.update(dt)
+	oldxLeft = ball.x 
+	oldyBottom = ball.y + ball.height
+	oldxRight = ball.x + ball.width
+	oldTop = ball.y
+	ball.update(dt)
+	for i = 1, #bs do
+		if checkCollision(ball,bs[i]) then
+			if oldyBottom < bs[i].y then
+				ball.y = ball.y - ((ball.y + ball.height) - bs[i].y) - 0.1
+				ball.vy = 0
+				print("col bottom "..bottom)
+			elseif oldTop > bs[i].y + bs[i].height then
+				ball.y = ball.y - (ball.y - (bs[i].y + bs[i].height)) + 0.1
+				ball.vy = 0
+				print("col top "..top)
+			
+			
+			elseif oldxLeft > bs[i].x + bs[i].width then
+				ball.x = ball.x - (ball.x - (bs[i].x + bs[i].width)) + 0.1
+				ball.vx = 0
+				print("col left "..left)
+				
+			elseif oldxRight < bs[i].x then
+				ball.x = ball.x - ((ball.x + ball.width) - bs[i].x) - 0.1
+				ball.vx = 0
+				print("col right "..right)
+			end
+		end
+	end
+end
+
+
+function love.draw()
+	love.graphics.rectangle("fill", ball.x,ball.y, ball.width,ball.height)
+
+	for i = 1, #bs do
+		love.graphics.rectangle("fill", bs[i].x,bs[i].y, bs[i].width,bs[i].height)
+	end
+end	
+
+function ball.update(dt)
+	if love.keyboard.isDown("d") then
+		ball.vx = ball.vx + ball.accel * dt
+	end
+	if love.keyboard.isDown("z") then
+		ball.vy = ball.vy - 50
+	end
+	if love.keyboard.isDown("q") then
+		ball.vx = ball.vx - ball.accel * dt
+	end
+
+
+	ball.x = ball.x + ball.vx * dt 
+	ball.y = ball.y + ball.vy * dt
+	ball.vy = ball.vy + ball.gravity * dt
+end	
+
+function checkCollision(a,b)
+	if a.x + (a.width) > b.x 
+	and a.x < b.x + b.width 
+	and a.y + a.height > b.y 
+	and a.y < b.y + b.height 
+	then
+		return true
+	else 
+		return false
+	end 
+end
+
+function newB(px,py)
+	local tab = {}
+			tab.x = px 
+			tab.y = py 
+			tab.width = 50 
+			tab.height = 50 
+
+	table.insert(bs, tab)
+end	
