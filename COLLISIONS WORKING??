@@ -1,6 +1,12 @@
+               				     --[[   	      ___     __        __      __        __   __   __           ___  __  
+							|\ | |__     |__)  /\  /__`    /__` |  | |__) |__) |__) |  |\/| |__  |__) 
+							| \| |___    |    /~~\ .__/    .__/ \__/ |    |    |  \ |  |  | |___ |  \ 
+                                                                          								]]
+
 io.stdout:setvbuf('no')
 love.graphics.setDefaultFilter("nearest")
-					-- ______________COLLISIONS RESOLVED ? REALLY WORKS SO FAR ???!!!!!!!!!!!!
+					-- ______________BASIC COLLISIONS RESOLVED ? REALLY WORKS SO FAR ???!!!!!!!!!!!!
+					-- ______________A CONSERVER PRECIEUSEMENT
 ball = {}
 ball.x = 0
 ball.y = 0
@@ -9,7 +15,7 @@ ball.height = 50
 ball.vx = 0
 ball.vy = 0
 ball.accel = 300
-ball.gravity = 350
+ball.gravity = 500
 
 bs = {}
 
@@ -20,10 +26,10 @@ bottom = "DOWN"
 
 function love.load()
 	for i = 1, 15 do
-		newB((i - 1) * 51, 400)
+		newB((i - 1) * 50, 400)
 	end
 	for i = 1, 10 do
-		newB((i - 1) * 51, 200)
+		newB((i - 1) * 50, 200)
 	end
 end
 
@@ -35,7 +41,7 @@ function love.update(dt)
 	oldTop = ball.y
 	ball.update(dt)
 	for i = 1, #bs do
-		if checkCollision(ball,bs[i]) then
+		if checkCollision(ball,bs[i]) then -- TESTER LES COLLISIONS DANS CET ORDRE PRECISEMENT, C'EST LA SOURCE DES BUGS DES ANCIENS ALGOS
 			if oldyBottom < bs[i].y then
 				ball.y = ball.y - ((ball.y + ball.height) - bs[i].y) - 0.1
 				ball.vy = 0
@@ -74,7 +80,7 @@ function ball.update(dt)
 		ball.vx = ball.vx + ball.accel * dt
 	end
 	if love.keyboard.isDown("z") then
-		ball.vy = ball.vy - 50
+		ball.vy = - 300
 	end
 	if love.keyboard.isDown("q") then
 		ball.vx = ball.vx - ball.accel * dt
