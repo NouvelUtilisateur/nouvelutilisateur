@@ -1,5 +1,5 @@
-local pnj = {}
-local pnjsList = {}
+local pnj = {} -- <-- DEVRAIS-JE AJOUTER MON OBJET DANS CETTE TABLE ou
+local pnjsList = {} -- <-- DANS CETTE TABLE?
 
 
 	function pnj.new()
