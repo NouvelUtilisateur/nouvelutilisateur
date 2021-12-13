@@ -1,0 +1,443 @@
+--=======================================================================================================================
+--																		|	
+--																		|	UTILITIES 
+--																		|		
+--																		|
+--=======================================================================================================================
+
+function math.dist(x1,y1, x2,y2) return ((x2-x1)^2+(y2-y1)^2)^0.5 end
+function collide(x1,y1,w1,h1, x2,y2,w2,h2)
+  return x1 < x2+w2 and
+         x2 < x1+w1 and 
+         y1 < y2+h2 and
+         y2 < y1+h1
+end
+function getVectorsLenght(px,py,px2,py2)
+    local lenghtx = (px2 - px)
+    local lenghty = (py2 - py)
+    return lenghtx,lenghty
+end
+function hypothenus(px,py)
+	local lenght = math.sqrt( (px^2) + (py^2) )
+	return lenght
+end
+function normalize(px,py)
+	local lenght = hypothenus(px,py)
+	px = px / lenght
+	py = py / lenght
+	return px,py
+end
+function calculateFPS(dt)
+	FPSTimer = FPSTimer + dt
+	FPSCounter = FPSCounter + 1
+	if FPSTimer >= 1 then 
+		FPS = FPSCounter
+		FPSCounter = 0
+		FPSTimer = 0
+	end
+end
+function camUpdate(dt)
+	if p.x + camx >= 16 then
+		camx = camx - p.vx * dt
+	end
+	if p.y + camy < 16*9 then
+		camy = camy + 120 * dt
+	elseif p.y + camy > (16*9)+5 then 
+		camy = camy - 120 * dt
+	end
+end
+function camShake(dt)
+	if camShakeGo then 
+		camShakeTimer = camShakeTimer + dt
+		if camShakeTimer <= 0.2 then
+			camShakex = love.math.random(-2,2) 
+			camShakey = love.math.random(-2,2)
+		else
+			camShakex = 0
+			camShakey = 0
+			camShakeTimer = 0
+			camShakeGo = false
+		end
+	end
+end
+function loadImages()
+	if images["tilesheet"] == nil then
+		images["tilesheet"] = love.graphics.newImage("tilesheet.png")
+		for i = 1, 10 do
+			for n = 1, 10 do
+				table.insert(images["quads"], love.graphics.newQuad( (n-1)*TILE_SIZE,(i-1)*TILE_SIZE, TILE_SIZE,TILE_SIZE, images["tilesheet"]:getDimensions()) )
+			end
+		end
+	end
+	if currentUniverse == "pokemon" then
+		images["pokemon"]["background"] = love.graphics.newImage("background_pokemon.png")
+		images["pokemon"]["cloud1"] = love.graphics.newImage("cloud1_pokemon.png")
+		images["pokemon"]["cloud2"] = love.graphics.newImage("cloud2_pokemon.png")
+		images["pokemon"]["mountain"] = love.graphics.newImage("moutains_pokemon.png")
+	end
+end
+function newAnimation()
+	local myA = {timer=1,currentFrame=1,currentAnim=nil,speed=5}
+
+	function myA:run(dt, pEntity)
+		self.timer = self.timer + dt * self.speed
+		self.currentFrame = math.floor(self.timer)
+		if self.currentFrame > #pEntity.quads[self.currentAnim] then
+			self.currentFrame = 1
+			self.timer = 1
+		end
+	end
+
+	function myA:change(pAnim)
+		if pAnim ~= self.currentAnim then
+			self.currentAnim = pAnim
+			self.currentFrame = 1
+			self.timer = 1
+		end
+	end
+
+	return myA
+end	
+
+--=======================================================================================================================
+--																		|	
+--																		|	GLOBAL 
+--																		|		VARIABLES
+--																		|
+--=======================================================================================================================
+
+FPS = 0
+FPSTimer = 0
+FPSCounter = 0
+
+SCREEN_WIDTH = love.graphics.getWidth()
+SCREEN_HEIGHT = love.graphics.getHeight()
+SCREEN_ROWS = 13
+SCREEN_COLUMNS = 17
+TILE_SIZE = 16
+
+playerStartRow = 9
+
+camx = 0
+camy = 0
+camShakex = 0
+camShakey = 0
+camShakeTimer = 0
+camShakeGo = false
+
+currentUniverse = "pokemon"
+images = {  }
+	images["tilesheet"] = nil
+	images["quads"] = {  }
+	images["pokemon"] = {  }
+		images["pokemon"]["background"] = nil
+		images["pokemon"]["cloud1"] = nil
+		images["pokemon"]["cloud2"] = nil
+		images["pokemon"]["mountain"] = nil
+
+platformsList = {  }
+birdsList = {  }
+
+--=======================================================================================================================
+--																		|	
+--																		|	NEW 
+--																		|		PLATFORM	
+--																		|
+--=======================================================================================================================
+
+function newRectangle(pX,pY,pUniverse)
+	local myR = { x=pX,y=pY,w=nil,h=nil, rw=nil,rh=nil ,universe=pUniverse }
+		
+		myR.w = love.math.random(20,30)
+		myR.h = 1
+		myR.rw = myR.w * TILE_SIZE
+		myR.rh = myR.h * TILE_SIZE
+
+		myR.shape = {}
+		for i = 1, myR.h do
+			myR.shape[i] = {}
+			for n = 1, myR.w do
+				myR.shape[i][n] = 0
+			end
+		end
+
+		-- SPAWN BIRDS ON THE PLATFORM ---------------------------------------
+		local rNb = love.math.random(0,1)
+		
+		if rNb == 1 then
+			for i = 1, love.math.random(3,5) do
+				table.insert(birdsList, newBird(myR.x+8*16+(i-1)*16, myR.y-16) )
+			end
+		end
+		----------------------------------------------------------------------
+
+	function myR:draw()
+		for i = 1, #myR.shape do
+			for n = 1, #myR.shape[i] do
+				love.graphics.draw(
+									images["tilesheet"], 
+									images["quads"][5],
+									camShakex+camx+self.x+(n-1)*TILE_SIZE,
+									camShakey+camy+self.y+(i-1)*TILE_SIZE
+								   )
+			end
+		end
+	end
+
+	return myR
+end	
+
+function generateNewPlatform(pList)
+	if #pList == 0 then
+		local randomR = love.math.random(0,1)
+		table.insert( pList, newRectangle(0,((11+randomR)-1)*TILE_SIZE, currentUniverse) )
+	else
+
+		local previousPlatform = pList[#pList]
+		
+		if previousPlatform.x + (previousPlatform.w*TILE_SIZE) + camx < 13*TILE_SIZE then
+
+			local rR = love.math.random(0,1)
+			local rC = love.math.random(4,7)
+			table.insert( 
+							pList, 
+							newRectangle( 
+											previousPlatform.x+(previousPlatform.w*TILE_SIZE)+rC*TILE_SIZE,
+											((11+rR)-1)*TILE_SIZE, 
+											currentUniverse
+										) 
+						)
+		end
+	end
+end
+
+--=======================================================================================================================
+--																		|	
+--																		|	NEW 
+--																		|		PLAYER
+--																		|
+--=======================================================================================================================
+
+function newPlayer()
+	local myP = { x=16,y=playerStartRow*TILE_SIZE, vx=200,vy=0, jumpVelocity=-200, gravity=400, stopUI=false , w=16,h=16, quads={}, oldx=nil,oldy=nil, isJumping=false}
+
+	myP.quads["run"] = {  }
+		myP.quads["run"][1] = images["quads"][1]
+		myP.quads["run"][2] = images["quads"][2]
+		myP.quads["run"][3] = images["quads"][3]
+	myP.quads["jumpUp"] = {  }
+		myP.quads["jumpUp"][1] = images["quads"][1]
+	myP.quads["jumpDown"] = {  }
+		myP.quads["jumpDown"][1] = images["quads"][2]
+
+	myP.anim = newAnimation()
+	myP.anim.currentAnim = "run"
+	myP.anim.speed = 11
+
+	function myP:update(dt)
+		self.anim:run(dt, self)
+
+		self.oldx = self.x
+		self.oldy = self.y
+
+		if self.stopUI == false then
+			if love.keyboard.isDown("space") then
+				self.vy = self.jumpVelocity
+				self.anim:change("jumpUp")
+				self.stopUI = true
+				self.isJumping = true
+			end
+		end
+
+		if self.isJumping and self.vy > 0 then
+			self.anim:change("jumpDown") 
+		end
+
+		self.vy = self.vy + self.gravity * dt
+		if self.vy > 300 then self.vy = 300 end
+
+		self.x = self.x + self.vx * dt
+		self.y = self.y + self.vy * dt
+	end
+
+	function myP:draw()
+		love.graphics.draw(
+							images["tilesheet"], 
+							self.quads[self.anim.currentAnim][self.anim.currentFrame],
+							camShakex+camx+self.x,
+							camShakey+camy+self.y
+						   )
+	end
+
+	return myP
+end
+
+--=======================================================================================================================
+--																		|	
+--																		|	NEW 
+--																		|		BIRD
+--																		|
+--=======================================================================================================================
+
+function newBird(pX, pY)
+	local myB = { x=pX,y=pY, vx=nil,vy=nil, quads={  }, fly=false, newVelocity=true }
+
+	myB.quads["inactive"] = {  }
+		myB.quads["inactive"][1] = images["quads"][7]
+	myB.quads["fly"] = {  }
+		myB.quads["fly"][1] = images["quads"][8]
+		myB.quads["fly"][2] = images["quads"][9]
+		myB.quads["fly"][3] = images["quads"][7]
+
+	myB.anim = newAnimation()
+	myB.anim.speed = 15
+	myB.anim.currentAnim = "inactive"
+
+	function myB:update(dt)
+		myB.anim:run(dt, self)
+
+		if self.fly == true then
+			if self.newVelocity then
+				self.vx = love.math.random(-50,50)
+				self.vy = love.math.random(-150,-180)
+				self.newVelocity = false
+			end
+			self.x = self.x + self.vx * dt
+			self.y = self.y + self.vy * dt
+		end
+	
+	end
+
+	function myB:draw()
+		love.graphics.draw(images["tilesheet"], self.quads[self.anim.currentAnim][self.anim.currentFrame], camShakex+camx+self.x,camShakey+camy+self.y)
+	end
+
+	return myB
+end
+
+--=======================================================================================================================
+--																		|	
+--																		|	
+--																		|		PARALLAX
+--																		|
+--=======================================================================================================================
+
+function newParallaxPokemon()
+	local myP = { bgx=0,bgy=0, c1x=0,c1y=0,c1vx=90, c2x=0,c2y=0,c2vx=35, mx=0,my=0,mvx=50, m2x=SCREEN_WIDTH/3,m2y=0  }
+
+		myP.images = images["pokemon"]
+
+		function myP:update(dt)
+			self.mx = self.mx - self.mvx * dt
+			self.m2x = self.m2x - self.mvx * dt
+			local mountainW = self.images["mountain"]:getWidth()
+			if self.mx + mountainW < 0 then
+				self.mx = self.m2x + mountainW
+			elseif self.m2x + mountainW < 0 then
+				self.m2x = self.mx + mountainW
+			end
+			self.c1x = self.c1x - self.c1vx * dt
+			self.c2x = self.c2x - self.c2vx * dt
+			if self.c1x + mountainW < 0 then
+				self.c1x = SCREEN_WIDTH /3
+			elseif self.c2x + mountainW < 0 then
+				self.c2x = SCREEN_WIDTH/3
+			end
+		end
+
+		function myP:draw()
+			love.graphics.draw(self.images["background"], camShakex+self.bgx,camShakey+camy+self.bgy)
+			love.graphics.draw(self.images["cloud2"], camShakex+self.c2x,camShakey+camy+self.c2y)
+			love.graphics.draw(self.images["mountain"], camShakex+self.mx,camShakey+camy+self.my)
+			love.graphics.draw(self.images["mountain"], camShakex+self.m2x,camShakey+camy+self.m2y)
+			love.graphics.draw(self.images["cloud1"], camShakex+self.c1x,camShakey+camy+self.c1y)
+		end
+
+	return myP
+end
+
+--=======================================================================================================================
+--																		|	
+--																		|	GAME
+--																		|		LOOP
+--																		|
+--=======================================================================================================================
+
+function love.load()
+	io.stdout:setvbuf('no')
+	love.graphics.setDefaultFilter("nearest")
+	love.math.setRandomSeed(love.timer.getTime())
+	love.graphics.setBackgroundColor(66/255,50/255,80/255)
+	love.window.setMode(816,624)
+	loadImages()
+	parallax_pokemon = newParallaxPokemon()
+	p = newPlayer()
+end
+
+function love.update(dt)
+	calculateFPS(dt)
+	camShake(dt)
+	camUpdate(dt)
+	parallax_pokemon:update(dt)
+	p:update(dt)
+	generateNewPlatform(platformsList)
+
+	for i = 1, #platformsList do
+		local pl = platformsList[i]
+
+		if collide(p.oldx,p.y,p.w,p.h, pl.x,pl.y,pl.rw,pl.rh) then
+			local vLenghtx, vLenghty = getVectorsLenght(p.x+p.w/2,p.y+p.h/2, pl.x+pl.rw/2,pl.y+pl.rh/2) -- origine du vecteur = le joueur
+			local overlapy = (p.h/2+pl.rh/2) - math.abs(vLenghty)
+			local unitx, unity = normalize(vLenghtx,vLenghty)
+			local reverseVy = nil
+			if math.ceil(unity) == 1 then reverseVy = 1 else reverseVy = -1 end 
+			p.y = p.y + ( (reverseVy *-1) * (overlapy+0.1) )
+			p.anim:change("run") 
+			p.stopUI = false
+			p.isJumping = false
+		end
+	end
+
+	-- delete platforms
+
+	for i = #platformsList, 1, -1 do
+		local pl = platformsList[i]
+		if pl.x + pl.rw + camx < 0 then
+			table.remove(platformsList, i)
+		end
+	end
+
+	-- update birds
+
+	for i = #birdsList, 1, -1 do
+		local b = birdsList[i]
+		if math.dist(p.x,p.y, b.x,b.y) <= 50 then 
+			b.fly = true
+			b.anim:change("fly")
+		end
+		b:update(dt)
+		if b.x + 10 + camx < 0 or b.y + 10 + camy < 0 then 
+			table.remove(birdsList, i)
+		end
+	end
+end
+
+function love.draw()
+	love.graphics.scale(3,3)
+
+	parallax_pokemon:draw()
+
+	for i = 1, #platformsList do
+		local pl = platformsList[i]
+		pl:draw()
+	end
+
+	for i = 1, #birdsList do
+		local b = birdsList[i]
+		b:draw()
+	end
+
+	p:draw()
+
+	love.graphics.print("FPS _ "..FPS,10,10, 0, 0.5)
+end
